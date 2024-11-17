@@ -24,46 +24,78 @@ class GenerateAst {
         const writer = fs.createWriteStream(filePath, { encoding: 'utf8' });
 
         writer.write("import Token from '../src/Token';\n")
-        writer.write("abstract class " + baseName + " {\n");
+        writer.write("export abstract class " + baseName + " {\n");
+        writer.write("  abstract accept<T>(visitor: Visitor<T>): T;\n")
 
-        writer.write("}\n");
+        writer.write("}\n\n");
+        this.defineVisitor(writer, baseName, types);
 
         types.forEach((type) => {
-            const className: string = type.split(":")[0].trim();
-            const fields: string = type.split(":")[1].trim();
-            const typesEnd: string = type.split(":")[2].trim();
-            const fieldType: string = typesEnd.split(",")[0].trim();
-            this.defineType(writer, baseName, className, fields, fieldType);
+            const colonIndex = type.indexOf(":");
+            const className = type.substring(0, colonIndex).trim();
+            const fieldList = type.substring(colonIndex + 1).trim();
+            this.defineType(writer, baseName, className, fieldList);
         });
+
+        writer.write("\n");
+
 
         writer.end();
         console.log(`Generated file: ${filePath}`);
     }
 
-    private static defineType(writer: fs.WriteStream, baseName: string, className: string, fieldList: string, fieldTypes: string ): void {
+    private static defineVisitor(writer: fs.WriteStream, baseName: string, types: string[]): void {
+        writer.write("export interface Visitor<T> {\n");
 
+        types.forEach((type) => {
+            const colonIndex = type.indexOf(":");
+            const className = colonIndex < 0 ? type.trim() : type.substring(0, colonIndex).trim();
+            writer.write(`    visit${className}${baseName}(${baseName.toLowerCase()}: ${className}): T;\n`);
+        })
+
+        writer.write("  }");
+    }
+
+    private static defineType(writer: fs.WriteStream, baseName: string, className: string, fieldList: string): void {
+        writer.write("\n\n");
         writer.write(`export class ${className} extends ${baseName} {\n`);
-        
-        // Fields
-        const fields: string[] = fieldList.split(", ").map((field) => field.trim());
-        fields.forEach((field) => {
-            writer.write(`    ${field};\n`);
-        });
 
+        if (fieldList) {
+            const fields: string[] = fieldList.split(",").map((field) => field.trim());
 
-        
-        // Constructor
-        writer.write(`\n    constructor(${fieldList}: ${fieldTypes}) {\n`);
-        writer.write(`        super();\n`);
-        fields.forEach((field) => {
-            const name: string = field.split(":")[0].trim();
-            writer.write(`        this.${name} = ${name};\n`);
-        });
-        writer.write("    }\n");
+            const fieldDeclarations: string[] = [];
+            const paramList: string[] = [];
+            const assignments: string[] = [];
 
-        writer.write("}\n\n");
-    
+            fields.forEach((field) => {
+                const [name, type] = field.split(":").map((s) => s.trim());
+                if (!name || !type) {
+                    console.error(`Field "${field}" is not valid. Should be in the format "name: type".`);
+                    process.exit(1);
+                }
+                fieldDeclarations.push(`    ${name}: ${type};\n`);
+                paramList.push(`${name}: ${type}`);
+                assignments.push(`        this.${name} = ${name};\n`);
+            });
+
+            // Fields
+            fieldDeclarations.forEach((decl) => {
+                writer.write(decl);
+            });
+
+            // Constructor
+            writer.write(`\n    constructor(${paramList.join(', ')}) {\n`);
+            writer.write(`        super();\n`);
+            assignments.forEach((assignment) => {
+                writer.write(assignment);
+            });
+            writer.write("    }\n");
+            writer.write("\n");
+            writer.write("    override accept<T>(visitor: Visitor<T>): T {\n")
+            writer.write(`      return visitor.visit${className}${baseName}(this);\n`);
+            writer.write("    }\n\n");
+            writer.write("}");
+        }
     }
 }
-
 GenerateAst.main();
