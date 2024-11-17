@@ -51,6 +51,43 @@ class AstPrinter implements Visitor<string> {
     );
     
         console.log(new AstPrinter().print(expression));
+        console.log("--------------------")
+        console.log(new RPNPrinter().print(expression));
     }
 }
+
+class RPNPrinter implements Visitor<string> {
+    print(expr: Expr): string {
+        return expr.accept(this);
+    }
+
+    visitBinaryExpr(expr: Binary): string {
+        return this.createRPN(expr.operator.lexeme, expr.left, expr.right);
+    }
+
+    visitGroupingExpr(expr: Grouping): string {
+        return expr.expression.accept(this);
+    }
+
+    visitLiteralExpr(expr: Literal): string {
+        if (expr.value == null) return "nil";
+        return expr.value.toString();
+    }
+
+    visitUnaryExpr(expr: Unary): string {
+        return this.createRPN(expr.operator.lexeme, expr.right);
+    }
+
+    private createRPN(name: string, ...exprs: Expr[]): string {
+        let builder: string[] = [];
+
+        
+        exprs.forEach((expr) => {
+            builder.push(expr.accept(this));
+        })
+        builder.push(name);
+        return builder.join(' ');
+    }
+}
+
 AstPrinter.main();
