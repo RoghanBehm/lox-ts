@@ -1,6 +1,6 @@
-import { Visitor, Expr, Binary, Grouping, Literal, Unary } from './Expr';
-import Token from '../src/Token';
-import TokenType from '../src/TokenType';
+import { Visitor, Expr, Binary, Grouping, Literal, Unary } from '../Expr';
+import Token from '../Token';
+import TokenType from '../TokenType';
 
 class AstPrinter implements Visitor<string> {
     print(expr: Expr): string {
@@ -80,7 +80,7 @@ class RPNPrinter implements Visitor<string> {
 
     private createRPN(name: string, ...exprs: Expr[]): string {
         let builder: string[] = [];
-
+        
         
         exprs.forEach((expr) => {
             builder.push(expr.accept(this));

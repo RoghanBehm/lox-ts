@@ -1,4 +1,4 @@
-import Token from '../src/Token';
+import Token from './Token';
 export abstract class Expr {
   abstract accept<T>(visitor: Visitor<T>): T;
 }
