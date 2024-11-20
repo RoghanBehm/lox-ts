@@ -91,3 +91,4 @@ class RPNPrinter implements Visitor<string> {
 }
 
 AstPrinter.main();
+export default AstPrinter;

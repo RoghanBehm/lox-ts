@@ -2,7 +2,9 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import Scanner from './Scanner';
 import Token from './Token';
-
+import AstPrinter from './tool/AstPrinter'
+import Parser from './Parser'
+import { Expr } from './Expr';
 
 class Lox {
     static hadError: boolean = false;
@@ -56,12 +58,12 @@ class Lox {
     private static run(source: string): void {
         const scanner = new Scanner(source);
         const tokens: Token[] = scanner.scanTokens();
+        const parser = new Parser(tokens);
+        const expression: Expr | null = parser.parse();
 
-        for (const token of tokens) {
-            console.log(token);
-        }
-
-
+        if (this.hadError || expression === null) return;
+        console.log(new AstPrinter().print(expression));
+        
     }
 
     static error(line: number, message: string): void {

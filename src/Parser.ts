@@ -14,8 +14,19 @@ class Parser {
     private tokens: Token[] = [];
     private current: number = 0;
 
-    Parser(tokens: Token[]) {
+    constructor(tokens: Token[]) {
         this.tokens = tokens;
+    }
+    
+    parse(): Expr | null {
+        try {
+            return this.expression();
+        } catch (error: unknown) {
+            if (error instanceof ParserError) {
+                return null;
+            }
+            throw error;
+        }
     }
 
     private expression(): Expr {
@@ -90,19 +101,19 @@ class Parser {
             return new Grouping(expr);
         }
 
-        throw new Error("Expected expression.");
+        throw error(this.peek(), "Expect expression.");
     }
 
     private match(...types: TokenType[]): boolean {
-        types.forEach((type) => {
+        for (const type of types) {
             if (this.check(type)) {
-                this.advance();
+                this.advance(); 
                 return true;
             }
-        })
-        return true;
+        }
+        return false;
     }
-
+     
     private consume(type: TokenType, message: string): Token {
         if (this.check(type)) return this.advance();
 
@@ -159,3 +170,5 @@ class Parser {
     }
 
 }
+
+export default Parser;
